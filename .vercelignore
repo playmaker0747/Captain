@@ -1,0 +1,31 @@
+# Git files
+.git
+.gitignore
+.github
+
+# Dependencies
+node_modules
+package-lock.json
+yarn.lock
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment (private keys, secrets)
+.env
+.env.local
+.env.*.local
+
+# Firebase config (keep this secret!)
+textiles-shop-bb09a-firebase-adminsdk-fbsvc-0d461822fd.json
+
+# Unnecessary files
+README.md
+.editorconfig
