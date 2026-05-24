@@ -1,0 +1,245 @@
+/* Admin Page Styles */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+  background-color: #fafafa;
+  color: #2c2c2c;
+}
+
+.admin-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 30px 20px;
+}
+
+.admin-container h1 {
+  text-align: center;
+  color: #1a1a1a;
+  margin-bottom: 35px;
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+/* Form Container */
+.form-container {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  border: 1px solid #f0f0f0;
+  margin-bottom: 40px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #2c2c2c;
+  margin-bottom: 6px;
+}
+
+.admin-container input[type="text"],
+.admin-container input[type="number"],
+.admin-container input[type="file"],
+.form-group input {
+  display: block;
+  width: 100%;
+  padding: 11px 14px;
+  margin-bottom: 0;
+  font-size: 0.95rem;
+  border: 1px solid #d0d0d0;
+  border-radius: 5px;
+  font-family: inherit;
+  background-color: #fafafa;
+  color: #2c2c2c;
+  transition: all 0.3s;
+}
+
+.admin-container input[type="text"]:focus,
+.admin-container input[type="number"]:focus,
+.admin-container input[type="file"]:focus,
+.form-group input:focus {
+  outline: none;
+  border-color: #2c2c2c;
+  background-color: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* File input styling */
+.admin-container input[type="file"] {
+  padding: 8px 14px;
+}
+
+/* Image Preview */
+.image-preview {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.image-preview img {
+  max-width: 150px;
+  max-height: 150px;
+  border-radius: 5px;
+  border: 1px solid #d0d0d0;
+  object-fit: cover;
+}
+
+.image-preview p {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 8px;
+}
+
+/* Form Button */
+.admin-container button {
+  width: 100%;
+  padding: 12px;
+  background-color: #2c2c2c;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s;
+  margin-bottom: 0;
+}
+
+.admin-container button:hover {
+  background-color: #1a1a1a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.admin-container button:active {
+  transform: translateY(0);
+}
+
+/* Admin Products Grid */
+#adminProducts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.admin-product {
+  background: white;
+  border-radius: 8px;
+  padding: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  overflow: hidden;
+  transition: all 0.3s;
+  border: 1px solid #f0f0f0;
+}
+
+.admin-product:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+  border-color: #e0e0e0;
+}
+
+.admin-product img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  background-color: #f5f5f5;
+}
+
+.admin-product-info {
+  padding: 18px;
+}
+
+.admin-product h3 {
+  font-size: 1.05rem;
+  margin-bottom: 8px;
+  color: #1a1a1a;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.admin-product p {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.admin-product .price {
+  font-size: 1.3rem;
+  color: #1a1a1a;
+  font-weight: 600;
+  margin: 8px 0;
+}
+
+.admin-product .stock-info {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.admin-product button {
+  width: 100%;
+  padding: 10px;
+  background-color: #e8e8e8;
+  color: #2c2c2c;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+}
+
+.admin-product button:hover {
+  background-color: #d0d0d0;
+}
+
+/* Loading state */
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .admin-container {
+    padding: 20px 16px;
+  }
+
+  .form-container {
+    padding: 20px;
+  }
+
+  #adminProducts {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-container h1 {
+    font-size: 1.5rem;
+    margin-bottom: 25px;
+  }
+
+  #adminProducts {
+    grid-template-columns: 1fr;
+  }
+
+  .form-container {
+    padding: 16px;
+  }
+}

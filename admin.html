@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>SUA Textiles Admin</title>
+
+  <link rel="stylesheet" href="css/admin.css">
+
+</head>
+
+<body>
+
+  <div class="admin-container">
+
+    <h1>SUA TEXTILES ADMIN</h1>
+
+    <div class="form-container">
+
+      <div class="form-group">
+        <label>Product Name</label>
+        <input
+          type="text"
+          id="adminName"
+          placeholder="Enter product name"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Price (₦)</label>
+        <input
+          type="number"
+          id="adminPrice"
+          placeholder="Enter price"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Product Image</label>
+        <input
+          type="file"
+          id="adminImage"
+          accept="image/*"
+        >
+        <div id="imagePreview" class="image-preview"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Stock Quantity</label>
+        <input
+          type="number"
+          id="adminStock"
+          placeholder="Enter stock quantity"
+        >
+      </div>
+
+      <button onclick="addProduct()">Add Product</button>
+
+    </div>
+
+    <div id="adminProducts"></div>
+
+  </div>
+
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+
+  <script src="firebase.js"></script>
+
+  <script src="admin.js"></script>
+
+</body>
+</html>

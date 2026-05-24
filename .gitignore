@@ -1,0 +1,22 @@
+# Firebase Admin SDK (Never commit this!)
+textiles-shop-bb09a-firebase-adminsdk-fbsvc-0d461822fd.json
+
+# Node modules (if you add npm packages)
+node_modules/
+package-lock.json
+yarn.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+.env.*.local
