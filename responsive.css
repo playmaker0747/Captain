@@ -1,0 +1,11 @@
+@media(max-width:768px){
+
+  .product-grid{
+    grid-template-columns:1fr;
+  }
+
+  .hero-text h1{
+    font-size:22px;
+  }
+
+}
