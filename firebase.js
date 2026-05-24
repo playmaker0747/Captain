@@ -12,10 +12,12 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase only if config is available
+let db, storage;
+
 if (firebaseConfig.apiKey) {
   firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-  const storage = firebase.storage();
+  db = firebase.firestore();
+  storage = firebase.storage();
 } else {
   console.warn("Firebase configuration is missing. Check your environment variables.");
 }

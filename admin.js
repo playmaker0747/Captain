@@ -1,5 +1,42 @@
 let selectedImageFile = null;
 
+// Compress image before upload
+function compressImage(file, callback) {
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onload = function(e) {
+    const img = new Image();
+    img.src = e.target.result;
+    img.onload = function() {
+      const canvas = document.createElement("canvas");
+      let width = img.width;
+      let height = img.height;
+      
+      // Resize if image is too large
+      const maxSize = 1200;
+      if (width > height) {
+        if (width > maxSize) {
+          height = (height * maxSize) / width;
+          width = maxSize;
+        }
+      } else {
+        if (height > maxSize) {
+          width = (width * maxSize) / height;
+          height = maxSize;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Convert to blob with compression (70% quality)
+      canvas.toBlob(callback, "image/jpeg", 0.7);
+    };
+  };
+}
+
 // Preview image when file is selected
 document.addEventListener("DOMContentLoaded", function() {
   const fileInput = document.getElementById("adminImage");
@@ -39,51 +76,66 @@ function addProduct() {
   // Show loading state
   const button = event.target;
   const originalText = button.textContent;
-  button.textContent = "Uploading...";
+  button.textContent = "Uploading... 0%";
   button.disabled = true;
 
-  // Upload image to Firebase Storage
-  const fileName = Date.now() + "_" + selectedImageFile.name;
-  const storageRef = storage.ref("products/" + fileName);
+  // Compress image first
+  compressImage(selectedImageFile, function(compressedBlob) {
+    const fileName = Date.now() + "_compressed.jpg";
+    const storageRef = storage.ref("products/" + fileName);
 
-  storageRef
-    .put(selectedImageFile)
-    .then(function(snapshot) {
-      return snapshot.ref.getDownloadURL();
-    })
-    .then(function(imageUrl) {
-      // Add product to Firestore with image URL
-      return db.collection("products").add({
-        name: name,
-        price: price,
-        image: imageUrl,
-        stock: stock,
-        createdAt: new Date()
-      });
-    })
-    .then(function() {
-      alert("Product added successfully!");
-      
-      // Clear form
-      document.getElementById("adminName").value = "";
-      document.getElementById("adminPrice").value = "";
-      document.getElementById("adminStock").value = "";
-      document.getElementById("adminImage").value = "";
-      document.getElementById("imagePreview").innerHTML = "";
-      selectedImageFile = null;
-      
-      // Refresh product list
-      renderAdminProducts();
-      
-      // Reset button
-      button.textContent = originalText;
-      button.disabled = false;
-    })
-    .catch(function(error) {
-      alert("Error uploading product: " + error.message);
-      button.textContent = originalText;
-      button.disabled = false;
-    });
+    // Upload with progress tracking
+    const uploadTask = storageRef.put(compressedBlob);
+
+    uploadTask.on(
+      "state_changed",
+      function(snapshot) {
+        // Progress tracking
+        const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+        button.textContent = "Uploading... " + progress + "%";
+      },
+      function(error) {
+        alert("Error uploading: " + error.message);
+        button.textContent = originalText;
+        button.disabled = false;
+      },
+      function() {
+        // Upload complete
+        uploadTask.snapshot.ref.getDownloadURL().then(function(imageUrl) {
+          return db.collection("products").add({
+            name: name,
+            price: price,
+            image: imageUrl,
+            stock: stock,
+            createdAt: new Date()
+          });
+        })
+        .then(function() {
+          alert("Product added successfully!");
+          
+          // Clear form
+          document.getElementById("adminName").value = "";
+          document.getElementById("adminPrice").value = "";
+          document.getElementById("adminStock").value = "";
+          document.getElementById("adminImage").value = "";
+          document.getElementById("imagePreview").innerHTML = "";
+          selectedImageFile = null;
+          
+          // Refresh product list
+          renderAdminProducts();
+          
+          // Reset button
+          button.textContent = originalText;
+          button.disabled = false;
+        })
+        .catch(function(error) {
+          alert("Error saving product: " + error.message);
+          button.textContent = originalText;
+          button.disabled = false;
+        });
+      }
+    );
+  });
 }
 
 function renderAdminProducts() {
@@ -105,7 +157,8 @@ function renderAdminProducts() {
             <div class="admin-product">
               <img
                 src="${p.image}"
-                onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-family=%22system-ui%22%3ENo Image%3C/text%3E%3C/svg%3E'"
+                onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-size=%2218%22 fill=%22%23999%22%3EImage not found%3C/text%3E%3C/svg%3E'"
+                alt="${p.name}"
               >
               <div class="admin-product-info">
                 <h3>${p.name}</h3>
