@@ -1,7 +1,6 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": ".",
   "framework": "static",
+  "outputDirectory": ".",
   "headers": [
     {
       "source": "/api/:path*",
