@@ -2,6 +2,9 @@ let selectedImageFile = null;
 let compressedImageBlob = null;
 let bulkProducts = [];
 
+// Storage key
+const STORAGE_KEY = 'sua_textiles_products';
+
 // Compress image before upload
 function compressImage(file, callback) {
   const reader = new FileReader();
@@ -14,7 +17,6 @@ function compressImage(file, callback) {
       let width = img.width;
       let height = img.height;
       
-      // Resize if image is too large
       const maxSize = 1200;
       if (width > height) {
         if (width > maxSize) {
@@ -32,8 +34,6 @@ function compressImage(file, callback) {
       canvas.height = height;
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, width, height);
-      
-      // Convert to blob with compression (70% quality)
       canvas.toBlob(callback, "image/jpeg", 0.7);
       URL.revokeObjectURL(img.src);
     };
@@ -47,6 +47,15 @@ function switchTab(tab) {
   
   document.getElementById(tab + '-tab').classList.add('active');
   event.target.classList.add('active');
+}
+
+// Convert blob to base64
+function blobToBase64(blob, callback) {
+  const reader = new FileReader();
+  reader.onloadend = function() {
+    callback(reader.result);
+  };
+  reader.readAsDataURL(blob);
 }
 
 // Preview image when file is selected
@@ -125,7 +134,6 @@ function handleCSVFile(file) {
       
       const values = lines[i].split(',').map(v => v.trim());
       
-      // Parse based on headers
       const nameIdx = headers.indexOf('name') >= 0 ? headers.indexOf('name') : 0;
       const priceIdx = headers.indexOf('price') >= 0 ? headers.indexOf('price') : 1;
       const stockIdx = headers.indexOf('stock') >= 0 ? headers.indexOf('stock') : 2;
@@ -152,7 +160,7 @@ function handleCSVFile(file) {
       }
     }
 
-    const totalLines = lines.length - 1; // Exclude header
+    const totalLines = lines.length - 1;
     document.getElementById('preview-container').style.display = 'block';
     document.getElementById('uploadBtn').textContent = `Upload ${bulkProducts.length} of ${totalLines} Products`;
   };
@@ -169,68 +177,44 @@ function addProduct() {
     return;
   }
 
-  // Show loading state
   const button = event.target;
   const originalText = button.textContent;
-  button.textContent = "Uploading... 0%";
+  button.textContent = "Processing...";
   button.disabled = true;
 
-  // Use pre-compressed blob - skip recompression
-  const fileName = Date.now() + "_compressed.jpg";
-  const storageRef = storage.ref("products/" + fileName);
-
-  // Upload with progress tracking
-  const uploadTask = storageRef.put(compressedImageBlob);
-
-  uploadTask.on(
-    "state_changed",
-    function(snapshot) {
-      // Progress tracking
-      const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-      button.textContent = "Uploading... " + progress + "%";
-    },
-    function(error) {
-      alert("Error uploading: " + error.message);
-      button.textContent = originalText;
-      button.disabled = false;
-    },
-    function() {
-      // Upload complete
-      uploadTask.snapshot.ref.getDownloadURL().then(function(imageUrl) {
-        return db.collection("products").add({
-          name: name,
-          price: price,
-          image: imageUrl,
-          stock: stock,
-          createdAt: new Date()
-        });
-      })
-      .then(function() {
-        alert("Product added successfully!");
-        
-        // Clear form
-        document.getElementById("adminName").value = "";
-        document.getElementById("adminPrice").value = "";
-        document.getElementById("adminStock").value = "";
-        document.getElementById("adminImage").value = "";
-        document.getElementById("imagePreview").innerHTML = "";
-        selectedImageFile = null;
-        compressedImageBlob = null;
-        
-        // Refresh product list
-        renderAdminProducts();
-        
-        // Reset button
-        button.textContent = originalText;
-        button.disabled = false;
-      })
-      .catch(function(error) {
-        alert("Error saving product: " + error.message);
-        button.textContent = originalText;
-        button.disabled = false;
-      });
-    }
-  );
+  // Convert compressed blob to base64
+  blobToBase64(compressedImageBlob, function(base64Image) {
+    // Get existing products
+    let products = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    
+    // Add new product
+    products.push({
+      id: Date.now(),
+      name: name,
+      price: price,
+      stock: stock,
+      image: base64Image,
+      createdAt: new Date().toISOString()
+    });
+    
+    // Save to localStorage
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+    
+    alert("✓ Product added successfully!");
+    
+    // Clear form
+    document.getElementById("adminName").value = "";
+    document.getElementById("adminPrice").value = "";
+    document.getElementById("adminStock").value = "";
+    document.getElementById("adminImage").value = "";
+    document.getElementById("imagePreview").innerHTML = "";
+    selectedImageFile = null;
+    compressedImageBlob = null;
+    
+    renderAdminProducts();
+    button.textContent = originalText;
+    button.disabled = false;
+  });
 }
 
 function uploadBulkProducts() {
@@ -244,123 +228,91 @@ function uploadBulkProducts() {
   button.textContent = "Processing...";
   button.disabled = true;
 
-  // Upload all products quickly
-  const batch = db.batch();
-  let uploadedCount = 0;
-
+  // Get existing products
+  let products = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  
+  // Add all bulk products
   bulkProducts.forEach((product) => {
-    const docRef = db.collection("products").doc();
-    batch.set(docRef, {
+    products.push({
+      id: Date.now() + Math.random(),
       name: product.name,
       price: product.price,
       stock: product.stock,
       image: product.image,
-      createdAt: new Date()
+      createdAt: new Date().toISOString()
     });
   });
-
-  // Commit batch in one operation
-  batch.commit()
-    .then(function() {
-      alert(`✓ Successfully uploaded ${bulkProducts.length} products!`);
-      
-      // Clear
-      bulkProducts = [];
-      document.getElementById("csvFile").value = "";
-      document.getElementById('preview-container').style.display = 'none';
-      button.textContent = originalText;
-      button.disabled = false;
-      
-      // Refresh product list
-      renderAdminProducts();
-    })
-    .catch(function(error) {
-      alert("Error uploading products: " + error.message);
-      button.textContent = originalText;
-      button.disabled = false;
-    });
+  
+  // Save all to localStorage
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+  
+  alert(`✓ Successfully uploaded ${bulkProducts.length} products!`);
+  
+  bulkProducts = [];
+  document.getElementById("csvFile").value = "";
+  document.getElementById('preview-container').style.display = 'none';
+  button.textContent = originalText;
+  button.disabled = false;
+  
+  renderAdminProducts();
 }
 
 function renderAdminProducts() {
   const box = document.getElementById("adminProducts");
   
-  db.collection("products")
-    .orderBy("createdAt", "desc")
-    .get()
-    .then(function(snapshot) {
-      let html = "";
+  try {
+    const products = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    
+    let html = "";
+    
+    if (products.length === 0) {
+      html = '<div class="loading">No products yet. Add your first product above!</div>';
+    } else {
+      html = '<div class="products-grid">';
       
-      if (snapshot.empty) {
-        html = '<div class="loading">No products yet. Add your first product above!</div>';
-      } else {
-        html = '<div class="products-grid">';
-        snapshot.forEach(function(doc) {
-          const p = doc.data();
-          
-          html += `
-            <div class="admin-product">
-              <img
-                src="${p.image}"
-                onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3C/svg%3E'"
-                alt="${p.name}"
-              >
-              <div class="admin-product-info">
-                <h3>${p.name}</h3>
-                <p class="price">₦${p.price.toLocaleString()}</p>
-                <p class="stock-info">Stock: ${p.stock} units</p>
-                <button onclick="deleteProduct('${doc.id}')" class="btn-delete">
-                  Delete
-                </button>
-              </div>
+      // Sort by newest first
+      products.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      products.forEach(function(p) {
+        html += `
+          <div class="admin-product">
+            <img
+              src="${p.image}"
+              alt="${p.name}"
+              onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3C/svg%3E'"
+            >
+            <div class="admin-product-info">
+              <h3>${p.name}</h3>
+              <p class="price">₦${p.price.toLocaleString()}</p>
+              <p class="stock-info">Stock: ${p.stock} units</p>
+              <button onclick="deleteProduct(${p.id})" class="btn-delete">
+                Delete
+              </button>
             </div>
-          `;
-        });
-        html += '</div>';
-      }
-      
-      box.innerHTML = html;
-    })
-    .catch(function(error) {
-      console.error("Error fetching products:", error);
-      box.innerHTML = '<div class="loading">Error loading products</div>';
-    });
+          </div>
+        `;
+      });
+      html += '</div>';
+    }
+    
+    box.innerHTML = html;
+  } catch (error) {
+    console.error("Error loading products:", error);
+    box.innerHTML = '<div class="loading">Error loading products</div>';
+  }
 }
 
 function deleteProduct(id) {
-  const confirmDelete = confirm("Are you sure you want to delete this product?");
+  if (!confirm("Are you sure you want to delete this product?")) return;
   
-  if (confirmDelete) {
-    // First get the image URL to delete it from storage
-    db.collection("products")
-      .doc(id)
-      .get()
-      .then(function(doc) {
-        if (doc.exists) {
-          const imageUrl = doc.data().image;
-          
-          // Delete from Firestore
-          db.collection("products").doc(id).delete();
-          
-          // Try to delete image from Storage (if it's from our storage)
-          if (imageUrl && imageUrl.includes("firebasestorage")) {
-            const imageRef = storage.refFromURL(imageUrl);
-            imageRef
-              .delete()
-              .then(function() {
-                console.log("Image deleted from storage");
-                renderAdminProducts();
-              })
-              .catch(function(error) {
-                console.log("Could not delete image:", error);
-                renderAdminProducts();
-              });
-          } else {
-            renderAdminProducts();
-          }
-        }
-      })
-      .catch(function(error) {
-        alert("Error deleting product: " + error.message);
-      });
+  try {
+    let products = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    products = products.filter(p => p.id !== id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+    
+    alert("✓ Product deleted!");
+    renderAdminProducts();
+  } catch (error) {
+    alert("Error deleting product: " + error.message);
   }
 }
